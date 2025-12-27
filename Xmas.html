@@ -106,6 +106,28 @@
             100% { transform: translateX(-50%) scale(1.2); opacity: 1; text-shadow: 0 0 20px #ffea00; }
         }
 
+                /* 눈송이 기본 스타일 */
+        .snowflake {
+            position: absolute;
+            top: -10px; /* 화면 위쪽에서 시작 */
+            background-color: white;
+            border-radius: 50%; /* 동그란 모양 */
+            opacity: 0.8;
+            pointer-events: none; /* 눈이 클릭을 방해하지 않게 설정 */
+            z-index: 9999; /* 다른 요소들보다 위에 보이게 */
+            animation: fall linear forwards; /* 아래로 떨어지는 애니메이션 */
+        }
+
+        /* 떨어지는 동작 정의 */
+        @keyframes fall {
+            0% {
+                transform: translateY(0) rotate(0deg);
+            }
+            100% {
+                transform: translateY(100vh) rotate(360deg); /* 화면 끝까지 이동 */
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -119,6 +141,35 @@
         
         <div class="trunk"></div>
     </div>
+
+    <script>
+        function createSnowflake() {
+            const snowflake = document.createElement('div');
+            snowflake.classList.add('snowflake');
+
+            // 1. 랜덤한 위치와 크기 설정
+            snowflake.style.left = Math.random() * 100 + 'vw'; // 가로 위치 랜덤
+            snowflake.style.width = Math.random() * 10 + 5 + 'px'; // 크기 5~15px 랜덤
+            snowflake.style.height = snowflake.style.width; // 정원형 유지
+            
+            // 2. 떨어지는 속도 랜덤 설정 (2초 ~ 5초 사이)
+            snowflake.style.animationDuration = Math.random() * 3 + 2 + 's'; 
+            
+            // 3. 투명도 랜덤 설정 (눈의 원근감 표현)
+            snowflake.style.opacity = Math.random();
+
+            // 4. 화면에 추가
+            document.body.appendChild(snowflake);
+
+            // 5. 바닥에 닿으면(애니메이션 시간 후) 메모리 정리를 위해 삭제
+            setTimeout(() => {
+                snowflake.remove();
+            }, 5000); // 5초 뒤에 삭제 (animationDuration 최대값과 맞춰주세요)
+        }
+
+        // 0.1초마다 눈송이 생성 (숫자를 줄이면 폭설, 늘리면 함박눈)
+        setInterval(createSnowflake, 100);
+    </script>
 
 </body>
 </html>
