@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>커스텀 MBTI 시뮬레이터</title>
+    <style>
+        /* [스타일] 깔끔하고 모던한 UI */
+        body {
+            background-color: #f4f6f8;
+            font-family: 'Pretendard', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            width: 450px;
+            height: 700px;
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* --- 1. 설정 화면 스타일 --- */
+        #setup-screen {
+            padding: 20px;
+            display: flex; /* 초기에는 보임 */
+            flex-direction: column;
+            height: 100%;
+        }
+
+        h2 { text-align: center; color: #333; margin-bottom: 20px; }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        input, select {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            flex: 1;
+        }
+
+        .btn {
+            padding: 12px;
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        .btn:hover { background-color: #357abd; }
+        .btn-start { background-color: #2ecc71; margin-top: auto; }
+        .btn-start:hover { background-color: #27ae60; }
+
+        /* 추가된 캐릭터 리스트 */
+        .char-list {
+            flex: 1;
+            overflow-y: auto;
+            margin-top: 20px;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+        }
+
+        .char-item {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+        }
+
+        /* --- 2. 시뮬레이션 화면 스타일 (숨김 처리) --- */
+        #sim-screen {
+            display: none; /* 초기에는 숨김 */
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .stage {
+            padding: 15px;
+            background-color: #eef2f5;
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            border-bottom: 1px solid #ddd;
+            min-height: 80px;
+            align-items: center;
+        }
+
+        .mini-char {
+            min-width: 60px;
+            text-align: center;
+            font-size: 0.75rem;
+            opacity: 0.4;
+            transition: 0.3s;
+        }
+        .mini-char.active { opacity: 1; transform: scale(1.1); font-weight: bold;}
+        .mini-avatar { width: 35px; height: 35px; background: #ddd; border-radius: 50%; margin: 0 auto 5px; line-height: 35px; }
+
+        .log-area {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: white;
+        }
+
+        .bubble {
+            max-width: 80%;
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            background-color: #f1f3f5;
+            animation: fadeIn 0.3s;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; } }
+
+        .controls { padding: 15px; border-top: 1px solid #eee; text-align: center; }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <div id="setup-screen">
+            <h2>캐릭터 설정</h2>
+            
+            <div class="input-group">
+                <input type="text" id="input-name" placeholder="이름 (예: 김대리)">
+                <input type="text" id="input-role" placeholder="직책/역할 (예: 팀장)">
+            </div>
+            
+            <div class="input-group">
+                <select id="input-mbti">
+                    <option value="ENTJ">ENTJ (지도자)</option>
+                    <option value="ENFP">ENFP (활동가)</option>
+                    <option value="ISTP">ISTP (장인)</option>
+                    <option value="ISFJ">ISFJ (수호자)</option>
+                    <option value="INTP">INTP (논리술사)</option>
+                    <option value="ESFP">ESFP (연예인)</option>
+                    </select>
+                <button class="btn" onclick="addCharacter()">추가 +</button>
+            </div>
+
+            <div class="char-list" id="char-list">
+                <div style="text-align:center; color:#999; margin-top:20px;">
+                    캐릭터를 추가해주세요.
+                </div>
+            </div>
+
+            <button class="btn btn-start" onclick="startSimulation()">시뮬레이션 시작 ▶</button>
+        </div>
+
+
+        <div id="sim-screen">
+            <div class="stage" id="stage">
+                </div>
+
+            <div class="log-area" id="log-area">
+                <div style="text-align:center; color:#ccc; font-size:0.8rem; margin-top:20px;">
+                    대화가 시작됩니다...
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="btn" onclick="nextTurn()">다음 대화 진행</button>
+                <button class="btn" style="background:#999;" onclick="resetSim()">설정으로 돌아가기</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- 데이터 관리 ---
+        let characters = []; // 사용자가 추가한 캐릭터들이 저장될 배열
+
+        // MBTI별 대사 데이터베이스 (간소화 버전)
+        const dialogues = {
+            E: ["자자, 다들 주목!", "오늘 점심 뭐 먹을까요?", "분위기가 너무 조용하네~", "빨리 하고 끝냅시다!"],
+            I: ["(조용히 눈치를 본다)", "...", "그건 좀 아닌 것 같은데...", "(속으로 퇴근하고 싶다고 생각한다)"],
+            T: ["팩트만 말합시다.", "그래서 결론이 뭐죠?", "논리적으로 말이 안 됩니다.", "효율이 떨어지네요."],
+            F: ["정말요? 힘들었겠다 ㅠㅠ", "다들 너무 고생이 많아요.", "우리 싸우지 말고 좋게 해요.", "기분 나쁘셨다면 죄송해요."]
+        };
+
+        // --- 함수 1: 캐릭터 추가 ---
+        function addCharacter() {
+            const nameInput = document.getElementById('input-name');
+            const roleInput = document.getElementById('input-role');
+            const mbtiInput = document.getElementById('input-mbti');
+
+            if (!nameInput.value || !roleInput.value) {
+                alert("이름과 직책을 모두 입력해주세요!");
+                return;
+            }
+
+            // 캐릭터 객체 생성
+            const newChar = {
+                name: nameInput.value,
+                role: roleInput.value,
+                mbti: mbtiInput.value,
+                color: getRandomColor() // 아바타용 랜덤 색상
+            };
+
+            characters.push(newChar);
+
+            // 화면 그리기
+            renderCharList();
+
+            // 입력창 초기화
+            nameInput.value = '';
+            roleInput.value = '';
+            nameInput.focus();
+        }
+
+        // --- 함수 2: 설정 화면의 리스트 갱신 ---
+        function renderCharList() {
+            const listArea = document.getElementById('char-list');
+            listArea.innerHTML = "";
+
+            characters.forEach((char, index) => {
+                listArea.innerHTML += `
+                    <div class="char-item">
+                        <span><strong>${char.name}</strong> (${char.role}) - ${char.mbti}</span>
+                        <button onclick="removeChar(${index})" style="background:#ff6b6b; padding:5px 10px; font-size:0.8rem;" class="btn">삭제</button>
+                    </div>
+                `;
+            });
+        }
+
+        // 캐릭터 삭제
+        function removeChar(index) {
+            characters.splice(index, 1);
+            renderCharList();
+        }
+
+        // --- 함수 3: 시뮬레이션 시작 ---
+        function startSimulation() {
+            if (characters.length < 2) {
+                alert("최소 2명 이상의 캐릭터가 필요합니다!");
+                return;
+            }
+
+            // 화면 전환
+            document.getElementById('setup-screen').style.display = 'none';
+            document.getElementById('sim-screen').style.display = 'flex';
+
+            // 상단 아바타 배치
+            const stage = document.getElementById('stage');
+            stage.innerHTML = "";
+            characters.forEach((char, idx) => {
+                stage.innerHTML += `
+                    <div class="mini-char" id="char-avatar-${idx}">
+                        <div class="mini-avatar" style="background:${char.color}; color:white;">${char.mbti[0]}</div>
+                        <div>${char.name}</div>
+                    </div>
+                `;
+            });
+
+            // 로그 초기화
+            document.getElementById('log-area').innerHTML = '<div style="text-align:center; color:#ccc; padding:10px;">시뮬레이션 시작</div>';
+        }
+
+        // --- 함수 4: 대화 진행 (핵심 로직) ---
+        function nextTurn() {
+            // 1. 발화자 랜덤 선정
+            const speakerIdx = Math.floor(Math.random() * characters.length);
+            const speaker = characters[speakerIdx];
+
+            // 2. 아바타 하이라이트 효과
+            document.querySelectorAll('.mini-char').forEach(el => el.classList.remove('active'));
+            document.getElementById(`char-avatar-${speakerIdx}`).classList.add('active');
+
+            // 3. MBTI 기반 대사 생성
+            // MBTI 문자열 (예: "ENTJ")을 분석
+            let dialoguePool = [];
+            
+            // E vs I (에너지)
+            if (speaker.mbti.includes('E')) dialoguePool.push(...dialogues.E);
+            else dialoguePool.push(...dialogues.I);
+
+            // T vs F (판단)
+            if (speaker.mbti.includes('T')) dialoguePool.push(...dialogues.T);
+            else dialoguePool.push(...dialogues.F);
+
+            // 대사 하나 뽑기
+            const randomText = dialoguePool[Math.floor(Math.random() * dialoguePool.length)];
+
+            // 4. 로그에 출력
+            const logArea = document.getElementById('log-area');
+            const bubble = document.createElement('div');
+            bubble.className = 'bubble';
+            
+            // 본인(E)이면 오른쪽, 아니면 왼쪽 배치 등 스타일 변화를 줄 수 있음
+            // 여기서는 단순하게 이름과 직책을 강조
+            bubble.innerHTML = `
+                <div style="font-size:0.8rem; color:#666; margin-bottom:4px;">
+                    ${speaker.role} <strong>${speaker.name}</strong> (${speaker.mbti})
+                </div>
+                <div style="color:#333;">${randomText}</div>
+            `;
+            // 색상 띠 추가
+            bubble.style.borderLeft = `5px solid ${speaker.color}`;
+
+            logArea.appendChild(bubble);
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+
+        // 리셋 함수
+        function resetSim() {
+            document.getElementById('sim-screen').style.display = 'none';
+            document.getElementById('setup-screen').style.display = 'flex';
+        }
+
+        // 유틸: 랜덤 색상 생성
+        function getRandomColor() {
+            const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#96CEB4', '#FFEEAD'];
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+    </script>
+</body>
+</html>
